@@ -1,6 +1,9 @@
 package models
 
 import (
+	"errors"
+	"fmt"
+
 	"emrecolak.com/rest-api/db"
 	"emrecolak.com/rest-api/utils"
 )
@@ -40,4 +43,24 @@ func (u User) Save() error {
 
 	return err
 
+}
+
+func (u *User) ValidateCredentials() error {
+	query := "SELECT id, password FROM users WHERE email = ?"
+	row := db.DB.QueryRow(query, u.Email)
+
+	var retrievedPassword string
+	err := row.Scan(&u.ID, &retrievedPassword)
+
+	if err != nil {
+		fmt.Println("error in retrieved password")
+		return errors.New("Credentials invalid")
+	}
+
+	isValidPassword := utils.ComparePasswordHash(u.Password, retrievedPassword)
+	if !isValidPassword {
+		return errors.New("Credentials invalid")
+	}
+
+	return nil
 }
